@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "pc-pod"
+  namespace: v-cluster
+  labels:
+    app: "pc-pod"
+spec:
+  containers:
+  - name: pc-con
+    image: "ubuntu:latest"
+    command: ["/bin/bash", "-c", "while true; do echo $ENV; sleep 5 ; done"]
+    resources:
+      limits:
+        cpu: 200m
+        memory: 500Mi
+      requests:
+        cpu: 100m
+        memory: 200Mi
+    env:
+    - name: ENV
+      valueFrom:
+        configMapKeyRef:
+          name: cm
+          key: env
+    ports:
+    - containerPort:  80
+      name:  http
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: pc-svc
+#   namespace: v-cluster
+# spec:
+#   selector:
+#     app: "pc-pod"
+#   type: LoadBalancer
+#   ports:
+#   - port: 97
+#     targetPort: 80
+
+    

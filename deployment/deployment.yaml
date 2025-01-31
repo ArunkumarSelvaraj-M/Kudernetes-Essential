@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: depl
+  namespace: v-cluster
+  labels:
+    app: depl
+spec:
+  selector:
+    matchLabels:
+      app: depl
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: depl
+    spec:
+      initContainers:
+      - name: init-container
+        image: ubuntu:latest
+        command: ["/bin/bash", "-c", "echo Initializing Deployment; sleep 10"]
+      containers:
+      - name: depl-con
+        image: ubuntu:latest
+        command: ["/bin/bash", "-c", "while true; do echo $ROLE; sleep 5 ; done"]
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+          limits:
+            cpu: 200m
+            memory: 200Mi
+        livenessProbe:
+          tcpSocket:
+            port: 80
+          initialDelaySeconds: 5
+          timeoutSeconds: 5
+          successThreshold: 1 
+          failureThreshold: 3
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /_status/healthz
+            port: 80
+          initialDelaySeconds: 5
+          timeoutSeconds: 2
+          successThreshold: 1
+          failureThreshold: 3
+          periodSeconds: 10
+        env:
+        - name: ROLE
+          valueFrom:
+            configMapKeyRef:
+              name: cm
+              key: env
+        ports:
+        - containerPort: 80
+          name: depl-port
+        volumeMounts:
+        - name: nginx-pv-storage
+          mountPath: /usr/share/nginx/html
+      volumes:
+      - name: nginx-pv-storage
+        hostPath:
+          path: /usr/share/zoneinfo/Asia/Shanghai
+  restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: depl-svc
+  namespace: v-cluster
+spec:
+  selector:
+    app: depl
+  type: NodePort
+  ports: 
+  - port: 99
+    targetPort: 80
+    nodePort: 30099

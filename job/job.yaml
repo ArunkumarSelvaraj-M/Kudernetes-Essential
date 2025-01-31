@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: example-job
+spec:
+  template:
+    metadata:
+      name: example-pod
+    spec:
+      containers:
+      - name: example-container
+        image: busybox
+        command: ["echo", "Hello from the job pod"]
+      restartPolicy: Never
+  backoffLimit: 4
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: data-processing-job
+spec:
+  template:
+    spec:
+      containers:
+      - name: data-processing-container
+        image: arunakilan/process_data:01
+      restartPolicy: OnFailure
+  backoffLimit: 2
